@@ -13,9 +13,9 @@
 #include <vector>
 
 #include "SimpleIni.h"
-#include "module.h"
 #include "../module_headers/module.h"
 #include "../module_headers/function_module.h"
+#include "u3d_function_module.h"
 #include "messagesf.h"
 
 // GLOBAL VARIABLES
