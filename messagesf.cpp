@@ -4,53 +4,28 @@
 *
 */
 
-#define _WINSOCK_DEPRECATED_NO_WARNINGS 
-#define _CRT_SECURE_NO_WARNINGS 
-#define _SCL_SECURE_NO_WARNINGS
-
 #include <string>
-#include "messagesf.h"
-#include <WinSock2.h>
+#include <vector>
 #include <windows.h>
 #include <process.h>
-#include <time.h>
-#include <map>
-#include <vector>
-#pragma comment(lib, "ws2_32") //link to dll
 
 #include <boost\interprocess\managed_shared_memory.hpp>
 #include <boost\interprocess\shared_memory_object.hpp>
 
+#include "messagesf.h"
 
-SOCKET SaR;
-
-CRITICAL_SECTION G_CS_MES;
 CRITICAL_SECTION *G_CS_FromMemory;
 
 bool Is_ReadFromSharedMemory = false;
-
-typedef std::pair<std::vector<std::pair<HANDLE*, std::string> *> *, CRITICAL_SECTION *> PairForSharedMemory;
-PairForSharedMemory G_DataFromSharedMemory;
-PairForSharedMemory *G_Data;
-
-HANDLE hPostman;
-bool Postman_Thread_Exist = true; // Global Variable to Colose Postman Thread
-
-HANDLE hSharedPostmansMem = NULL;
-LPVOID pTempBuf; // Проверим просто с указателем
-PVOID pBuf;
 
 struct VectorAndCS{
 	std::vector<std::pair<HANDLE*, std::string> *>* Vector;
 	CRITICAL_SECTION *CS;
 };
 
-VectorAndCS *VACSFromSharedMemory;
-
 std::vector<std::pair<HANDLE*, std::string> *> *BoxOfMessages;
 
 int extractString(std::string str, char first, char second){
-
 	std::string temp("");
 
 	int beg = 0;
@@ -68,46 +43,19 @@ int extractObj_id(std::string str){
 	return extractString(str, ':', '&');
 };
 
-std::string extractMessage(std::string str){
-	std::string temp("");
-
-	char first = '+';
-	char second = '&';
-
-	unsigned int beg = 0;
-	unsigned int end = 0;
-
-	beg = str.find(first)+1;
-	end = str.find(second)+1; // чтобы сохранить амперсанд и не надо было снова функции переписывать
-
-	temp.assign(str, beg, end - beg);
-	return temp;
-};
-
-int extractUniq_Id(std::string str){
-	return extractString(str,'%','+');
-};
-
-
 void testStringSuccess(std::string str){
 	if (str.find("fail") != std::string::npos) {
 		throw std::exception();
 	}
 };
 
-
 void initFunctionsDll(){
-
 	boost::interprocess::shared_memory_object shm_obj(boost::interprocess::open_only, "PostmansSharedMemory", boost::interprocess::read_write);
 	boost::interprocess::mapped_region region(shm_obj, boost::interprocess::read_only);
 
 	VectorAndCS **VACSFSM = static_cast<VectorAndCS**>(region.get_address());
-	VACSFromSharedMemory = *VACSFSM;
-
-	VectorAndCS tempShMetm = **VACSFSM;
-
-	G_CS_FromMemory = VACSFromSharedMemory->CS;
-	BoxOfMessages = VACSFromSharedMemory->Vector;
+	G_CS_FromMemory = (*VACSFSM)->CS;
+	BoxOfMessages = (*VACSFSM)->Vector;
 };
 
 std::string createMessage(std::string params){
@@ -131,18 +79,14 @@ std::string createMessage(std::string params){
 	return pairParams.second;
 };
 
-
-// for DELETECREATEDOBJECT
 void deleteCreatedObject(int obj_id){
 	std::string params("delete:");
 
-	params.append(std::to_string((int)obj_id));
+	params.append(std::to_string(obj_id));
 
 	createMessage(params);
 };
 
-
-// for CREATECUBE
 int createCube(int x, int y, int z, int d_x, int d_y, int d_z, std::string color){
 	std::string params("obj:cube,");
 
@@ -167,7 +111,6 @@ int createCube(int x, int y, int z, int d_x, int d_y, int d_z, std::string color
 	return d;
 };
 
-// for CREATESPHERE
 int createSphere(int x, int y, int z, int Radius, std::string color){
 	std::string params("obj:sphere,");
 

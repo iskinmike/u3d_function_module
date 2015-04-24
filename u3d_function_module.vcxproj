@@ -41,9 +41,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\..\Soft_new\function_modules\u3d</OutDir>
-    <IncludePath>G:\Soft\boost_1_58_0;$(IncludePath)</IncludePath>
-    <LibraryPath>G:\Soft\boost_1_58_0\libs;$(LibraryPath)</LibraryPath>
+    <OutDir>..\..\bin\function_modules\u3d</OutDir>
+    <IncludePath>C:\Programs\boost_1_57_0;$(IncludePath)</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);</LibraryPath>
     <TargetName>u3d_module</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -61,7 +61,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>g:\Soft\boost_1_58_0\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Programs\boost_1_57_0\stage\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -83,10 +83,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="function_module.h" />
     <ClInclude Include="messagesf.h" />
-    <ClInclude Include="module.h" />
-    <ClInclude Include="SimpleIni.h" />
     <ClInclude Include="u3d_function_module.h" />
   </ItemGroup>
   <ItemGroup>

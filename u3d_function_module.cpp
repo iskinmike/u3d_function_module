@@ -4,22 +4,17 @@
 *
 */
 
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS 
-#define _SCL_SECURE_NO_WARNINGS
-
 #include <iostream>
 #include <windows.h>
 #include <vector>
 
-#include "SimpleIni.h"
 #include "../module_headers/module.h"
 #include "../module_headers/function_module.h"
 #include "u3d_function_module.h"
 #include "messagesf.h"
 
 // GLOBAL VARIABLES
-int COUNT_U3D_FUNCTIONS=3;
+const int COUNT_U3D_FUNCTIONS = 3;
 
 u3dFunctionModule::u3dFunctionModule() {
 	u3d_functions = new FunctionData*[COUNT_U3D_FUNCTIONS];
