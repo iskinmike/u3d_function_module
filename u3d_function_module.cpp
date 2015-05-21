@@ -109,6 +109,9 @@ int u3dFunctionModule::endProgram(int uniq_index) {
 }
 void u3dFunctionModule::destroy() {
 	for (unsigned int j = 0; j < COUNT_U3D_FUNCTIONS; ++j) {
+		if (u3d_functions[j]->count_params) {
+			delete[] u3d_functions[j]->params;
+		}
 		delete u3d_functions[j];
 	}
 	delete[] u3d_functions;
