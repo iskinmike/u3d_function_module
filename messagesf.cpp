@@ -6,24 +6,29 @@
 
 #include <string>
 #include <vector>
-#include <windows.h>
-#include <process.h>
 
-#include <boost\interprocess\managed_shared_memory.hpp>
-#include <boost\interprocess\shared_memory_object.hpp>
+#ifdef _WIN32
+	#define _WINSOCK_DEPRECATED_NO_WARNINGS
+	#define _CRT_SECURE_NO_WARNINGS 
+	#define _SCL_SECURE_NO_WARNINGS
+#endif
+
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
 
 #include "messagesf.h"
+#include "define_section.h"
 
-CRITICAL_SECTION *G_CS_FromMemory;
+PTR_DEFINE_ATOM(G_CS_FromMemory);
 
 bool Is_ReadFromSharedMemory = false;
 
 struct VectorAndCS{
-	std::vector<std::pair<HANDLE*, std::string> *>* Vector;
-	CRITICAL_SECTION *CS;
+	std::vector<std::pair<PTR_EVENT_HANDLE, std::string> *>* Vector;
+	PTR_DEFINE_ATOM(CS);
 };
 
-std::vector<std::pair<HANDLE*, std::string> *> *BoxOfMessages;
+std::vector<std::pair<PTR_EVENT_HANDLE, std::string> *> *BoxOfMessages;
 
 int extractString(std::string str, char first, char second){
 	std::string temp("");
@@ -59,21 +64,22 @@ void initFunctionsDll(){
 };
 
 std::string createMessage(std::string params){
-	HANDLE WaitRecivedMessage;
-	WaitRecivedMessage = CreateEvent(NULL, true, false, NULL);
 
-	std::pair<HANDLE*, std::string> pairParams(&WaitRecivedMessage, params);
+	DEFINE_EVENT(WaitRecivedMessage);
+	DEFINE_ATOM(WaitMessageMutex);
+
+	std::pair<PTR_EVENT_HANDLE, std::string> pairParams(&WaitRecivedMessage, params);
 	if (!Is_ReadFromSharedMemory){
 		initFunctionsDll();
 		Is_ReadFromSharedMemory = true;
 	}
-	EnterCriticalSection(G_CS_FromMemory); //CRITICAL_SECTION
-	(*BoxOfMessages).push_back(&pairParams); //push_back
-	LeaveCriticalSection(G_CS_FromMemory);
+	ATOM_LOCK(*G_CS_FromMemory);
+	(*BoxOfMessages).push_back(&pairParams);
+	ATOM_UNLOCK(*G_CS_FromMemory); 
 	if (params != "destroy") {
-		WaitForSingleObject(WaitRecivedMessage, INFINITE);
+		EVENT_WAIT(WaitRecivedMessage,WaitMessageMutex);
 	}
-	CloseHandle(WaitRecivedMessage);
+	DESTROY_EVENT(WaitRecivedMessage);
 
 	testStringSuccess(pairParams.second);
 	return pairParams.second;
