@@ -4,12 +4,15 @@
 *
 */
 
-#include <iostream>
-#include <windows.h>
+#include <string>
 #include <vector>
 
-#include "../module_headers/module.h"
-#include "../module_headers/function_module.h"
+#ifdef _WIN32
+	#include <windows.h>
+#endif
+
+#include "module.h"
+#include "function_module.h"
 #include "u3d_function_module.h"
 #include "messagesf.h"
 
@@ -21,29 +24,29 @@ u3dFunctionModule::u3dFunctionModule() {
 	system_value function_id = 0;
 
 	FunctionData::ParamTypes *Params = new FunctionData::ParamTypes[7];
-	Params[0] = FunctionData::FLOAT;
-	Params[1] = FunctionData::FLOAT;
-	Params[2] = FunctionData::FLOAT;
-	Params[3] = FunctionData::FLOAT;
-	Params[4] = FunctionData::FLOAT;
-	Params[5] = FunctionData::FLOAT;
-	Params[6] = FunctionData::STRING;
+	Params[0] = FunctionData::ParamTypes::FLOAT;
+	Params[1] = FunctionData::ParamTypes::FLOAT;
+	Params[2] = FunctionData::ParamTypes::FLOAT;
+	Params[3] = FunctionData::ParamTypes::FLOAT;
+	Params[4] = FunctionData::ParamTypes::FLOAT;
+	Params[5] = FunctionData::ParamTypes::FLOAT;
+	Params[6] = FunctionData::ParamTypes::STRING;
 
 	u3d_functions[function_id] = new FunctionData(function_id + 1, 7, Params, "spawnCube");
 	function_id++;
 
 	Params = new FunctionData::ParamTypes[5];
-	Params[0] = FunctionData::FLOAT;
-	Params[1] = FunctionData::FLOAT;
-	Params[2] = FunctionData::FLOAT;
-	Params[3] = FunctionData::FLOAT;
-	Params[4] = FunctionData::STRING;
+	Params[0] = FunctionData::ParamTypes::FLOAT;
+	Params[1] = FunctionData::ParamTypes::FLOAT;
+	Params[2] = FunctionData::ParamTypes::FLOAT;
+	Params[3] = FunctionData::ParamTypes::FLOAT;
+	Params[4] = FunctionData::ParamTypes::STRING;
 
 	u3d_functions[function_id] = new FunctionData(function_id + 1, 5, Params, "spawnSphere");
 	function_id++;
 
 	Params = new FunctionData::ParamTypes[1];
-	Params[0] = FunctionData::FLOAT;
+	Params[0] = FunctionData::ParamTypes::FLOAT;
 	u3d_functions[function_id] = new FunctionData(function_id + 1, 1, Params, "deleteCreatedObject");
 };
 
@@ -118,6 +121,6 @@ void u3dFunctionModule::destroy() {
 	delete this;
 };
 
-__declspec(dllexport) FunctionModule* getFunctionModuleObject() {
+PREFIX_FUNC_DLL FunctionModule* getFunctionModuleObject() {
 	return new u3dFunctionModule();
 };
