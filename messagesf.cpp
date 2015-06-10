@@ -3,7 +3,7 @@
 * Author: m79lol, iskinmike
 *
 */
-
+#include <stdlib.h>
 #include <string>
 #include <vector>
 
@@ -12,6 +12,7 @@
 
 #include "messagesf.h"
 #include "define_section.h"
+#include "stringC11.h"
 
 PTR_DEFINE_ATOM(G_CS_FromMemory);
 
@@ -36,7 +37,7 @@ int extractString(std::string str, char first, char second){
 
 	temp.assign(str, beg, end - beg);
 
-	return std::stoi(temp);
+	return strtod(temp.c_str(), NULL);
 };
 int extractObj_id(std::string str){
 	return extractString(str, ':', '&');
