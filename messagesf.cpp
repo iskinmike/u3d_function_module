@@ -75,6 +75,7 @@ std::string createMessage(std::string params){
 		EVENT_WAIT(WaitRecivedMessage,WaitMessageMutex);
 	}
 	DESTROY_EVENT(WaitRecivedMessage);
+	DESTROY_ATOM(WaitMessageMutex);
 
 	testStringSuccess(pairParams.second);
 	return pairParams.second;
