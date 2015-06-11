@@ -12,7 +12,10 @@
 
 #include "messagesf.h"
 #include "define_section.h"
-#include "stringC11.h"
+
+#ifndef _MSC_VER
+	#include "stringC11.h"
+#endif
 
 PTR_DEFINE_ATOM(G_CS_FromMemory);
 
@@ -75,8 +78,9 @@ std::string createMessage(std::string params){
 		EVENT_WAIT(WaitRecivedMessage,WaitMessageMutex);
 	}
 	DESTROY_EVENT(WaitRecivedMessage);
+#ifndef _WIN32
 	DESTROY_ATOM(WaitMessageMutex);
-
+#endif
 	testStringSuccess(pairParams.second);
 	return pairParams.second;
 };
