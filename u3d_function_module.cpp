@@ -4,6 +4,13 @@
 *
 */
 
+#ifdef _WIN32
+	#define _WINSOCK_DEPRECATED_NO_WARNINGS
+	#define _CRT_SECURE_NO_WARNINGS 
+	#define _SCL_SECURE_NO_WARNINGS
+#endif
+
+#include <stdlib.h>
 #include <string>
 #include <vector>
 
@@ -17,7 +24,7 @@
 #include "messagesf.h"
 
 // GLOBAL VARIABLES
-const int COUNT_U3D_FUNCTIONS = 3;
+const unsigned int COUNT_U3D_FUNCTIONS = 3;
 
 u3dFunctionModule::u3dFunctionModule() {
 	u3d_functions = new FunctionData*[COUNT_U3D_FUNCTIONS];
@@ -51,7 +58,7 @@ u3dFunctionModule::u3dFunctionModule() {
 };
 
 FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, void **args) {
-	if ((function_index < 1) || (function_index > COUNT_U3D_FUNCTIONS)) {
+	if ((function_index < 1) || (function_index > (int) COUNT_U3D_FUNCTIONS)) {
 		return NULL;
 	}
 	variable_value rez = 0;

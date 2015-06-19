@@ -3,9 +3,33 @@
 * Author: m79lol, iskinmike
 *
 */
+
+#ifdef _WIN32
+	#define _WINSOCK_DEPRECATED_NO_WARNINGS
+	#define _CRT_SECURE_NO_WARNINGS 
+	#define _SCL_SECURE_NO_WARNINGS
+#endif
+
 #include <stdlib.h>
 #include <string>
 #include <vector>
+
+#ifdef _WIN32
+	#include <WinSock2.h>
+	#include <process.h>
+
+	#ifdef _MSC_VER
+		#pragma comment(lib, "Ws2_32.lib") //link to dll
+	#endif
+#else
+	#include <pthread.h>
+	#include <arpa/inet.h>
+	#include <sys/types.h>
+	#include <sys/time.h>
+	#include <sys/socket.h>
+	#include <unistd.h>
+	#include <errno.h>
+#endif
 
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
@@ -13,8 +37,10 @@
 #include "messagesf.h"
 #include "define_section.h"
 
-#ifndef _MSC_VER
-	#include "stringC11.h"
+#ifdef _WIN32
+	#ifndef _MSC_VER
+		#include "stringC11.h"
+	#endif
 #endif
 
 PTR_DEFINE_ATOM(G_CS_FromMemory);
@@ -71,16 +97,20 @@ std::string createMessage(std::string params){
 		initFunctionsDll();
 		Is_ReadFromSharedMemory = true;
 	}
+
 	ATOM_LOCK(*G_CS_FromMemory);
 	(*BoxOfMessages).push_back(&pairParams);
 	ATOM_UNLOCK(*G_CS_FromMemory); 
+
 	if (params != "destroy") {
 		EVENT_WAIT(WaitRecivedMessage,WaitMessageMutex);
 	}
+
 	DESTROY_EVENT(WaitRecivedMessage);
 #ifndef _WIN32
 	DESTROY_ATOM(WaitMessageMutex);
 #endif
+
 	testStringSuccess(pairParams.second);
 	return pairParams.second;
 };
