@@ -104,7 +104,9 @@ void *u3dFunctionModule::writePC(unsigned int *buffer_length) {
 	*buffer_length = 0;
 	return NULL;
 }
-int u3dFunctionModule::startProgram(int uniq_index, void *buffer, unsigned int buffer_length) {
+void u3dFunctionModule::readPC(void *buffer, unsigned int buffer_length) {
+}
+int u3dFunctionModule::startProgram(int uniq_index) {
 	return 0;
 }
 int u3dFunctionModule::endProgram(int uniq_index) {

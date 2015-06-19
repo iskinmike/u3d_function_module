@@ -3,7 +3,7 @@
 * Author: m79lol, iskinmike
 *
 */
-
+#include <stdlib.h>
 #include <string>
 #include <vector>
 
@@ -12,6 +12,10 @@
 
 #include "messagesf.h"
 #include "define_section.h"
+
+#ifndef _MSC_VER
+	#include "stringC11.h"
+#endif
 
 PTR_DEFINE_ATOM(G_CS_FromMemory);
 
@@ -36,7 +40,7 @@ int extractString(std::string str, char first, char second){
 
 	temp.assign(str, beg, end - beg);
 
-	return std::stoi(temp);
+	return strtod(temp.c_str(), NULL);
 };
 int extractObj_id(std::string str){
 	return extractString(str, ':', '&');
@@ -74,7 +78,9 @@ std::string createMessage(std::string params){
 		EVENT_WAIT(WaitRecivedMessage,WaitMessageMutex);
 	}
 	DESTROY_EVENT(WaitRecivedMessage);
-
+#ifndef _WIN32
+	DESTROY_ATOM(WaitMessageMutex);
+#endif
 	testStringSuccess(pairParams.second);
 	return pairParams.second;
 };
