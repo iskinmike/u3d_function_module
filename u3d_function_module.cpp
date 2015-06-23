@@ -61,8 +61,9 @@ FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, 
 	if ((function_index < 1) || (function_index > (int) COUNT_U3D_FUNCTIONS)) {
 		return NULL;
 	}
-	variable_value rez = 0;
+	
 	try {
+    variable_value rez = 0;
 		switch (function_index) {
 		case 1: {
 			variable_value *input1 = (variable_value *)args[0];
