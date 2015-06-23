@@ -2,11 +2,13 @@
 CC=g++
 CCC=g++
 CXX=g++
+RM = "C:\msys\1.0\bin\rm.exe"
+MKDIR = "C:\msys\1.0\bin\mkdir.exe"
 
 # Constants
-MODULE_HEADERS_DIR = "G:\TempRepo\module_headers"
-SIMPLEINI_DIR = "G:\TempRepo\simpleini"
-BOOST_DIR = "G:\Soft\boost_1_58_0"
+MODULE_HEADERS_DIR = "C:\Program Files (x86)\Jenkins\workspace\module_headers"
+SIMPLEINI_DIR = "C:\Program Files (x86)\Jenkins\workspace\RCML_build\simpleini"
+BOOST_DIR = "C:\boost_1_58_0"
 
 INCLUDE_DIR_FLAGS = -I${MODULE_HEADERS_DIR} -I${SIMPLEINI_DIR} -I${BOOST_DIR}
 
@@ -20,27 +22,27 @@ debug: FILENAME_FIX = debug
 debug: clean module
 
 release: OBJECTDIR = build/Release
-release: FLAGS = -O3 ${FLAGS_MUTUAL}
+release: FLAGS = -O3 ${FLAGS_MUTUAL} -DIS_RELEASE
 release: FILENAME_FIX = release
 release: clean module
 
 clean:
 	@echo "-------------------------" 
-	rm -rf ${OBJECTDIR}
+	${RM} -rf ${OBJECTDIR}
 
 messagesf.o:  messagesf.cpp
 	@echo "-------------------------" 
-	mkdir -p ${OBJECTDIR}
-	rm -f "${OBJECTDIR}/$@.d"
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} -f "${OBJECTDIR}/$@.d"
 	$(COMPILE.cc) $(FLAGS) -o ${OBJECTDIR}/messagesf.o messagesf.cpp
 
 u3d_function_module.o:  u3d_function_module.cpp
 	@echo "-------------------------" 
-	mkdir -p ${OBJECTDIR}
-	rm -f "${OBJECTDIR}/$@.d"
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} -f "${OBJECTDIR}/$@.d"
 	$(COMPILE.cc) $(FLAGS) -o  ${OBJECTDIR}/u3d_function_module.o u3d_function_module.cpp
 
 module: messagesf.o u3d_function_module.o 
 	@echo "-------------------------" 
-	mkdir -p ${OBJECTDIR}
+	${MKDIR} -p ${OBJECTDIR}
 	${LINK.cc} -m32 -shared ${OBJECTDIR}/u3d_function_module.o ${OBJECTDIR}/messagesf.o -o ${OBJECTDIR}/u3d_module_$(FILENAME_FIX).dll
