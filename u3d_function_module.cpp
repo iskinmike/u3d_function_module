@@ -4,55 +4,66 @@
 *
 */
 
-#include <iostream>
-#include <windows.h>
+#ifdef _WIN32
+	#define _WINSOCK_DEPRECATED_NO_WARNINGS
+	#define _CRT_SECURE_NO_WARNINGS 
+	#define _SCL_SECURE_NO_WARNINGS
+#endif
+
+#include <stdlib.h>
+#include <string>
 #include <vector>
 
-#include "../module_headers/module.h"
-#include "../module_headers/function_module.h"
+#ifdef _WIN32
+	#include <windows.h>
+#endif
+
+#include "module.h"
+#include "function_module.h"
 #include "u3d_function_module.h"
 #include "messagesf.h"
 
 // GLOBAL VARIABLES
-const int COUNT_U3D_FUNCTIONS = 3;
+const unsigned int COUNT_U3D_FUNCTIONS = 3;
 
 u3dFunctionModule::u3dFunctionModule() {
 	u3d_functions = new FunctionData*[COUNT_U3D_FUNCTIONS];
 	system_value function_id = 0;
 
 	FunctionData::ParamTypes *Params = new FunctionData::ParamTypes[7];
-	Params[0] = FunctionData::FLOAT;
-	Params[1] = FunctionData::FLOAT;
-	Params[2] = FunctionData::FLOAT;
-	Params[3] = FunctionData::FLOAT;
-	Params[4] = FunctionData::FLOAT;
-	Params[5] = FunctionData::FLOAT;
-	Params[6] = FunctionData::STRING;
+	Params[0] = FunctionData::ParamTypes::FLOAT;
+	Params[1] = FunctionData::ParamTypes::FLOAT;
+	Params[2] = FunctionData::ParamTypes::FLOAT;
+	Params[3] = FunctionData::ParamTypes::FLOAT;
+	Params[4] = FunctionData::ParamTypes::FLOAT;
+	Params[5] = FunctionData::ParamTypes::FLOAT;
+	Params[6] = FunctionData::ParamTypes::STRING;
 
 	u3d_functions[function_id] = new FunctionData(function_id + 1, 7, Params, "spawnCube");
 	function_id++;
 
 	Params = new FunctionData::ParamTypes[5];
-	Params[0] = FunctionData::FLOAT;
-	Params[1] = FunctionData::FLOAT;
-	Params[2] = FunctionData::FLOAT;
-	Params[3] = FunctionData::FLOAT;
-	Params[4] = FunctionData::STRING;
+	Params[0] = FunctionData::ParamTypes::FLOAT;
+	Params[1] = FunctionData::ParamTypes::FLOAT;
+	Params[2] = FunctionData::ParamTypes::FLOAT;
+	Params[3] = FunctionData::ParamTypes::FLOAT;
+	Params[4] = FunctionData::ParamTypes::STRING;
 
 	u3d_functions[function_id] = new FunctionData(function_id + 1, 5, Params, "spawnSphere");
 	function_id++;
 
 	Params = new FunctionData::ParamTypes[1];
-	Params[0] = FunctionData::FLOAT;
+	Params[0] = FunctionData::ParamTypes::FLOAT;
 	u3d_functions[function_id] = new FunctionData(function_id + 1, 1, Params, "deleteCreatedObject");
 };
 
 FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, void **args) {
-	if ((function_index < 1) || (function_index > COUNT_U3D_FUNCTIONS)) {
+	if ((function_index < 1) || (function_index > (int) COUNT_U3D_FUNCTIONS)) {
 		return NULL;
 	}
-	variable_value rez = 0;
+	
 	try {
+    variable_value rez = 0;
 		switch (function_index) {
 		case 1: {
 			variable_value *input1 = (variable_value *)args[0];
@@ -101,7 +112,9 @@ void *u3dFunctionModule::writePC(unsigned int *buffer_length) {
 	*buffer_length = 0;
 	return NULL;
 }
-int u3dFunctionModule::startProgram(int uniq_index, void *buffer, unsigned int buffer_length) {
+void u3dFunctionModule::readPC(void *buffer, unsigned int buffer_length) {
+}
+int u3dFunctionModule::startProgram(int uniq_index) {
 	return 0;
 }
 int u3dFunctionModule::endProgram(int uniq_index) {
@@ -109,12 +122,15 @@ int u3dFunctionModule::endProgram(int uniq_index) {
 }
 void u3dFunctionModule::destroy() {
 	for (unsigned int j = 0; j < COUNT_U3D_FUNCTIONS; ++j) {
+		if (u3d_functions[j]->count_params) {
+			delete[] u3d_functions[j]->params;
+		}
 		delete u3d_functions[j];
 	}
 	delete[] u3d_functions;
 	delete this;
 };
 
-__declspec(dllexport) FunctionModule* getFunctionModuleObject() {
+PREFIX_FUNC_DLL FunctionModule* getFunctionModuleObject() {
 	return new u3dFunctionModule();
 };
