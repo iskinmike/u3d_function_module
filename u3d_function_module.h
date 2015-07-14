@@ -11,13 +11,11 @@ class u3dFunctionModule : public FunctionModule {
 	FunctionData **u3d_functions;
 
 public:
-
-	colorPrintf_t *colorPrintf;
 	u3dFunctionModule();
 
 	//init
 	const char *getUID();
-	void prepare(colorPrintf_t *colorPrintf_p, colorPrintfVA_t *colorPrintfVA_p);
+	void prepare(colorPrintfModule_t *colorPrintf_p, colorPrintfModuleVA_t *colorPrintfVA_p){};
 
 	//compiler only
 	FunctionData **getFunctions(unsigned int *count_functions);

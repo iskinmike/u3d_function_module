@@ -98,9 +98,6 @@ FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, 
 	};
 };
 
-void u3dFunctionModule::prepare(colorPrintf_t *colorPrintf_p, colorPrintfVA_t *colorPrintfVA_p) {
-	colorPrintf = colorPrintf_p;
-}
 FunctionData** u3dFunctionModule::getFunctions(unsigned int *count_functions) {
 	*count_functions = COUNT_U3D_FUNCTIONS;
 	return u3d_functions;
