@@ -9,7 +9,6 @@
 
 struct CondBoolString;
 struct MutexAndBoxVector;
-
 struct SocketAndBuffer{
 	boost::asio::ip::tcp::socket *socket_;
 	char *buffer_;

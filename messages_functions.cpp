@@ -1,7 +1,5 @@
 #ifdef _WIN32
-	#define _WINSOCK_DEPRECATED_NO_WARNINGS
 	#define _CRT_SECURE_NO_WARNINGS 
-	#define _SCL_SECURE_NO_WARNINGS
 #endif
 
 #include <stdio.h>
@@ -31,7 +29,6 @@ std::string returnStr(int _i){
 };
 
 double extractString(std::string str, char first, char second){
-
 	std::string temp("");
 
 	int beg = 0;
@@ -52,7 +49,7 @@ double extractX(std::string str){
 	return extractString(str, ':', ',');
 };
 double extractY(std::string str){
-	int first_pos = str.find(',');
+	int first_pos = str.find(',') + 1;
 	int last_pos  = str.find(',',first_pos+1);
 	std::string temp_str = str.substr(first_pos, last_pos - first_pos);
 
@@ -60,13 +57,16 @@ double extractY(std::string str){
 };
 double extractZ(std::string str){
 	int first_pos = str.find(',');
-	first_pos = str.find(',', first_pos + 1);
+	first_pos = str.find(',', first_pos + 1) + 1;
 	int last_pos = str.find(',', first_pos + 1);
 	std::string temp_str = str.substr(first_pos, last_pos - first_pos);
 	return strtod(temp_str.c_str(), NULL);
 };
 double extractAngle(std::string str){
-	return extractString(str, ',', '&');
+	int first_pos = str.find_last_of(',') + 1;
+	int last_pos = str.find('&');
+	std::string temp_str = str.substr(first_pos, last_pos - first_pos);
+	return strtod(temp_str.c_str(), NULL);
 };
 std::string extractMessage(std::string str){
 	std::string temp("");
@@ -115,8 +115,7 @@ std::string createMessage(std::string params){
 	boost::mutex message_mutex;
 	boost::condition_variable wait_recieved_message;
 	CondBoolString *message_struct = new CondBoolString(&wait_recieved_message, false, params);
-
-	// need global mutex
+	// wake up postman thread
 	(*box_mutex).lock();
 	box_of_messages->push_back(message_struct);
 	(*postman_thread_waker_flag) = true;
@@ -124,7 +123,7 @@ std::string createMessage(std::string params){
 	(*box_mutex).unlock();
 
 	if (params != "destroy") {
-		// Ожидание ответа от Потока сокета
+		// wait to recieve socket answer
 		boost::unique_lock<boost::mutex> lock(message_mutex);
 		while (!message_struct->bool_var)
 		{
@@ -142,7 +141,6 @@ std::string createMessage(std::string params){
 void recieveBoxOfMessageAddress(std::vector<CondBoolString*> *address){
 	box_of_messages = address;
 }
-
 
 // createWorld
 void createWorld(int x, int y, int z){

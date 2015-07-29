@@ -5,9 +5,7 @@
 */
 
 #ifdef _WIN32
-	#define _WINSOCK_DEPRECATED_NO_WARNINGS
 	#define _CRT_SECURE_NO_WARNINGS 
-	#define _SCL_SECURE_NO_WARNINGS
 #endif
 
 #include <string>
@@ -54,10 +52,9 @@ void u3dFunctionModule::write_handler(const boost::system::error_code& ec, std::
 
 void u3dFunctionModule::read_handler(SocketAndBuffer *sock_and_buff_struct, const boost::system::error_code& ec, std::size_t bytes_transferred)
 {
-	char perc = '%';
-	char amper = '&';
 	if (sock_and_buff_struct->buffer_){
-		// обработка данных
+		char perc = '%';
+		char amper = '&';
 		std::string temp_message(sock_and_buff_struct->buffer_, bytes_transferred);
 
 		while (temp_message.find(amper) != std::string::npos) {
@@ -200,7 +197,7 @@ FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, 
 	try {
 		// new test if we don't connect to socket or have problems with connection
 		if (is_fail_to_prepare) { throw std::exception(); }
-    variable_value rez = 0;
+		variable_value rez = 0;
 		switch (function_index) {
 		case 1:{
 			variable_value *input1 = (variable_value *)args[0];
@@ -438,6 +435,7 @@ void u3dFunctionModule::colorPrintf(ConsoleColor colors, const char *mask, ...) 
 }
 
 void u3dFunctionModule::modulePostmanThread(){
+	// create reciever thread
 	module_reciever_thread = new boost::thread(boost::bind(&u3dFunctionModule::moduleRecieverThread,this));
 
 	std::string mailed_message("");
