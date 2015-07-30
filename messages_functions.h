@@ -20,16 +20,22 @@ struct MutexAndBoxVector{
 	std::vector<CondBoolString *> *box;
 	boost::condition_variable *cond_postman_thread_waker;
 	bool *bool_postman_thread_waker_flag;
+	bool *is_world_initialized_flag;
+	std::vector<int> *ids_of_objects;
 };
 
 /// Helper Functions
 inline std::string returnStr(int _i);
 int extractUniq_Id(std::string str);
+bool *returnIsWorldInitializedFlag();
+void readSharedMemory();
+bool returnIsReadSharedMemory();
 ///
 
 void createWorld(int x, int y, int z);
 void destroyWorld();
 void deleteObject(int object_id);
+void deleteRobot(int object_id);
 int createCube(int x, int y, int z, int dx, int dy, int dz, int angle, int hold, std::string color);
 int createSphere(int x, int y, int z, int R, int hold, std::string color);
 

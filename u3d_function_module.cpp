@@ -77,7 +77,7 @@ void u3dFunctionModule::read_handler(SocketAndBuffer *sock_and_buff_struct, cons
 		);
 }
 
-u3dFunctionModule::u3dFunctionModule() : module_socket(robot_io_service_), postman_thread_waker_flag(false){
+u3dFunctionModule::u3dFunctionModule() : module_socket(robot_io_service_), postman_thread_waker_flag(false), is_world_initialized(false){
 	u3d_functions = new FunctionData*[COUNT_U3D_FUNCTIONS];
 	system_value function_id = 0;
 
@@ -200,22 +200,30 @@ FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, 
 		variable_value rez = 0;
 		switch (function_index) {
 		case 1:{
-			variable_value *input1 = (variable_value *)args[0];
-			variable_value *input2 = (variable_value *)args[1];
-			variable_value *input3 = (variable_value *)args[2];
-			createWorld((int)*input1, (int)*input2, (int)*input3);
+			if (!is_world_initialized) {
+				variable_value *input1 = (variable_value *)args[0];
+				variable_value *input2 = (variable_value *)args[1];
+				variable_value *input3 = (variable_value *)args[2];
+				createWorld((int)*input1, (int)*input2, (int)*input3);
+				is_world_initialized = true;
+			}
 			break;
 		}
 		case 2:{
-			destroyWorld();
+			if (is_world_initialized){
+				destroyWorld();
+				is_world_initialized = false;
+			}
 			break;
 		}
 		case 3:{
+			if (!is_world_initialized) { throw std::exception(); }
 			variable_value *input1 = (variable_value *)args[0];
 			deleteObject((int)*input1);
 			break;
 		}
 		case 4:{
+			if (!is_world_initialized) { throw std::exception(); }
 			variable_value *input1 = (variable_value *)args[0];
 			variable_value *input2 = (variable_value *)args[1];
 			variable_value *input3 = (variable_value *)args[2];
@@ -229,6 +237,7 @@ FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, 
 			break;
 		}
 		case 5:{
+			if (!is_world_initialized) { throw std::exception(); }
 			variable_value *input1 = (variable_value *)args[0];
 			variable_value *input2 = (variable_value *)args[1];
 			variable_value *input3 = (variable_value *)args[2];
@@ -239,6 +248,7 @@ FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, 
 			break;
 		}
 		case 6:{
+			if (!is_world_initialized) { throw std::exception(); }
 			variable_value *input1 = (variable_value *)args[0];
 			variable_value *input2 = (variable_value *)args[1];
 			variable_value *input3 = (variable_value *)args[2];
@@ -253,12 +263,14 @@ FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, 
 			break;
 		}
 		case 7:{
+			if (!is_world_initialized) { throw std::exception(); }
 			variable_value *input1 = (variable_value *)args[0];
 			std::string input2((const char *)args[1]);
 			changeColor((int)*input1, input2);
 			break;
 		}
 		case 8:{
+			if (!is_world_initialized) { throw std::exception(); }
 			variable_value *input1 = (variable_value *)args[0];
 			variable_value *input2 = (variable_value *)args[1];
 			variable_value *input3 = (variable_value *)args[2];
@@ -270,27 +282,32 @@ FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, 
 			break;
 		}
 		case 9:{
+			if (!is_world_initialized) { throw std::exception(); }
 			variable_value *input1 = (variable_value *)args[0];
 			variable_value *input2 = (variable_value *)args[1];
 			changeStatus((int)*input1, (int)*input2);
 			break;
 		}
 		case 10:{
+			if (!is_world_initialized) { throw std::exception(); }
 			variable_value *input1 = (variable_value *)args[0];
 			rez = getX((int)*input1);
 			break;
 		}
 		case 11:{
+			if (!is_world_initialized) { throw std::exception(); }
 			variable_value *input1 = (variable_value *)args[0];
 			rez = getY((int)*input1);
 			break;
 		}
 		case 12:{
+			if (!is_world_initialized) { throw std::exception(); }
 			variable_value *input1 = (variable_value *)args[0];
 			rez = getZ((int)*input1);
 			break;
 		}
 		case 13:{
+			if (!is_world_initialized) { throw std::exception(); }
 			variable_value *input1 = (variable_value *)args[0];
 			rez = getAngle((int)*input1);
 			break;
@@ -421,6 +438,8 @@ void u3dFunctionModule::prepare(colorPrintfModule_t *colorPrintf_p, colorPrintfM
 	data_for_shared_memory->mtx = &module_mutex;
 	data_for_shared_memory->cond_postman_thread_waker = &postman_thread_waker;
 	data_for_shared_memory->bool_postman_thread_waker_flag = &postman_thread_waker_flag;
+	data_for_shared_memory->is_world_initialized_flag = &is_world_initialized;
+	data_for_shared_memory->ids_of_objects = &ids_of_created_objects;
 
 	std::memcpy(region.get_address(), &data_for_shared_memory, region.get_size());
 	// Create postman thread
@@ -466,7 +485,7 @@ void u3dFunctionModule::modulePostmanThread(){
 		module_mutex.unlock();
 		for (auto i = postmans_map_of_mailed_messages.begin(); i != postmans_map_of_mailed_messages.end(); i++){
 			if (i->second->string_var != ""){
-				mailed_message = "%%" + returnStr(i->first) + "+" + i->second->string_var + "&";  // construct message
+				mailed_message = "%%" + returnStr(i->first) + i->second->string_var + "&";  // construct message
 				// send to socket
 				module_socket.async_send(
 					boost::asio::buffer(mailed_message.c_str(), mailed_message.length()),

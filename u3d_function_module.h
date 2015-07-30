@@ -18,6 +18,10 @@ class u3dFunctionModule : public FunctionModule {
 	FunctionData **u3d_functions;
 	colorPrintfModuleVA_t *colorPrintf_p;
 
+	bool is_world_initialized;
+
+	std::vector<int> ids_of_created_objects;
+
 	void modulePostmanThread();
 	void moduleRecieverThread();
 	void read_handler(
