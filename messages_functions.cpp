@@ -134,13 +134,11 @@ std::string createMessage(std::string params){
 	(*postman_thread_waker).notify_one();
 	(*box_mutex).unlock();
 
-	if (params != "destroy") {
-		// wait to recieve socket answer
-		boost::unique_lock<boost::mutex> lock(message_mutex);
-		while (!message_struct->bool_var)
-		{
-			(*(message_struct->cond_var)).wait(lock);
-		}
+	// wait to recieve socket answer
+	boost::unique_lock<boost::mutex> lock(message_mutex);
+	while (!message_struct->bool_var)
+	{
+		(*(message_struct->cond_var)).wait(lock);
 	}
 
 	std::string result_message_str(message_struct->string_var);

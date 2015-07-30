@@ -5,10 +5,11 @@ CXX=g++
 
 # Constants
 MODULE_HEADERS_DIR = /var/lib/jenkins/workspace/module_headers/
+SIMPLEINI_DIR = /var/lib/jenkins/workspace/RCML_build/simpleini/
 
-INCLUDE_DIR_FLAGS = -I${MODULE_HEADERS_DIR}
+INCLUDE_DIR_FLAGS = -I${MODULE_HEADERS_DIR} -I${SIMPLEINI_DIR}
 
-FLAGS_MUTUAL = -Wall -m32 -std=c++11 -fPIC ${INCLUDE_DIR_FLAGS} -MMD -MP -MF "${OBJECTDIR}/$@.d"
+FLAGS_MUTUAL = -Wall -m32 -std=c++11 ${INCLUDE_DIR_FLAGS} -MMD -MP -MF "${OBJECTDIR}/$@.d"
 
 .PHONY: debug
 
@@ -24,21 +25,21 @@ release: clean module
 
 clean:
 	@echo "-------------------------" 
-	rm -rf ${OBJECTDIR}
+	${RM} -rf ${OBJECTDIR}
 
-messagesf.o:  messagesf.cpp
+messages_functions.o:  messages_functions.cpp
 	@echo "-------------------------" 
-	mkdir -p ${OBJECTDIR}
-	rm -f "${OBJECTDIR}/$@.d"
-	$(COMPILE.cc) $(FLAGS) -o ${OBJECTDIR}/messagesf.o messagesf.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} -f "${OBJECTDIR}/$@.d"
+	$(COMPILE.cc) $(FLAGS) -o ${OBJECTDIR}/messages_functions.o messages_functions.cpp
 
 u3d_function_module.o:  u3d_function_module.cpp
 	@echo "-------------------------" 
-	mkdir -p ${OBJECTDIR}
-	rm -f "${OBJECTDIR}/$@.d"
-	$(COMPILE.cc) $(FLAGS) -o  ${OBJECTDIR}/u3d_function_module.o u3d_function_module.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} -f "${OBJECTDIR}/$@.d"
+	$(COMPILE.cc) $(FLAGS) -D_WIN32_WINNT=0x0501 -DWINVER=0x0501 -o  ${OBJECTDIR}/u3d_function_module.o u3d_function_module.cpp
 
-module: messagesf.o u3d_function_module.o 
+module: messages_functions.o u3d_function_module.o
 	@echo "-------------------------" 
-	mkdir -p ${OBJECTDIR}
-	${LINK.cc} -m32 -shared ${OBJECTDIR}/u3d_function_module.o ${OBJECTDIR}/messagesf.o -o ${OBJECTDIR}/u3d_module_$(FILENAME_FIX).so
+	${MKDIR} -p ${OBJECTDIR}
+	${LINK.cc} -m32 -shared ${OBJECTDIR}/u3d_function_module.o ${OBJECTDIR}/messages_functions.o -o ${OBJECTDIR}/u3d_module_$(FILENAME_FIX).so -lboost_system -lboost_thread

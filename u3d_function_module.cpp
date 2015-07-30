@@ -8,8 +8,15 @@
 	#define _CRT_SECURE_NO_WARNINGS 
 #endif
 
+#include <stdio.h>
+#include <stdarg.h>
 #include <string>
 #include <vector>
+
+#ifndef _WIN32
+	#include <fcntl.h>
+	#include <dlfcn.h>
+#endif
 
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
@@ -77,7 +84,10 @@ void u3dFunctionModule::read_handler(SocketAndBuffer *sock_and_buff_struct, cons
 		);
 }
 
-u3dFunctionModule::u3dFunctionModule() : module_socket(robot_io_service_), postman_thread_waker_flag(false), is_world_initialized(false){
+u3dFunctionModule::u3dFunctionModule() : module_socket(robot_io_service_){
+	postman_thread_waker_flag=false;
+	is_world_initialized = false;
+
 	u3d_functions = new FunctionData*[COUNT_U3D_FUNCTIONS];
 	system_value function_id = 0;
 
@@ -345,6 +355,8 @@ int u3dFunctionModule::endProgram(int uniq_index) {
 void u3dFunctionModule::destroy() {
 	robot_io_service_.stop();
 
+	printf("destroy started \n");
+
 	for (unsigned int j = 0; j < COUNT_U3D_FUNCTIONS; ++j) {
 		if (u3d_functions[j]->count_params) {
 			delete[] u3d_functions[j]->params;
@@ -361,16 +373,34 @@ void u3dFunctionModule::destroy() {
 	postman_thread_waker_flag = true;
 	postman_thread_waker.notify_one();
 	module_mutex.unlock();
+
 	// wait to close thread;
 	module_postman_thread->join();
 	module_reciever_thread->join();
+
+	for (auto i = postmans_map_of_mailed_messages.begin(); i != postmans_map_of_mailed_messages.end(); i++){
+		printf("we missed someone \n");
+		i->second->bool_var = true;
+		i->second->string_var = "fail";
+		i->second->cond_var->notify_one();
+	}
+
+	postman_exit_mutex.unlock();
+	module_mutex.unlock();
+	postman_thread_mutex.unlock();
+
+	colorPrintf(ConsoleColor(ConsoleColor::green), "Threads done work");
+
 	delete module_postman_thread;
 	delete module_reciever_thread;
 	delete box_of_messages;
 	delete data_for_shared_memory;
 	delete sock_and_buff_struct;
 	boost::interprocess::shared_memory_object::remove("PostmansSharedMemory");
+
+	printf("destroy almost ended \n");
 	delete this;
+	printf("destroy ended \n");
 };
 
 void u3dFunctionModule::prepare(colorPrintfModule_t *colorPrintf_p, colorPrintfModuleVA_t *colorPrintfVA_p){
