@@ -1,27 +1,26 @@
 #ifdef _WIN32
-	#define _CRT_SECURE_NO_WARNINGS 
+#define _CRT_SECURE_NO_WARNINGS
 #endif
 
 #include <string>
 #include <windows.h>
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
-
 std::string getConfigPath() {
-    std::string result = "";
-    WCHAR DllPath[MAX_PATH] = { 0 };
+  std::string result = "";
+  WCHAR DllPath[MAX_PATH] = {0};
 
-    GetModuleFileNameW((HINSTANCE)&__ImageBase, DllPath, (DWORD)MAX_PATH);
+  GetModuleFileNameW((HINSTANCE)&__ImageBase, DllPath, (DWORD)MAX_PATH);
 
-    WCHAR *tmp = wcsrchr(DllPath, L'\\');
-    WCHAR wConfigPath[MAX_PATH] = { 0 };
-    size_t path_len = tmp - DllPath;
-    wcsncpy(wConfigPath, DllPath, path_len);
-    wcscat(wConfigPath, L"\\config.ini");
+  WCHAR *tmp = wcsrchr(DllPath, L'\\');
+  WCHAR wConfigPath[MAX_PATH] = {0};
+  size_t path_len = tmp - DllPath;
+  wcsncpy(wConfigPath, DllPath, path_len);
+  wcscat(wConfigPath, L"\\config.ini");
 
-    char ConfigPath[MAX_PATH] = { 0 };
-    wcstombs(ConfigPath, wConfigPath, sizeof(ConfigPath));
+  char ConfigPath[MAX_PATH] = {0};
+  wcstombs(ConfigPath, wConfigPath, sizeof(ConfigPath));
 
-    result.append(ConfigPath);
-    return result;
+  result.append(ConfigPath);
+  return result;
 }
