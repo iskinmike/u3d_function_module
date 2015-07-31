@@ -35,6 +35,18 @@ const unsigned int COUNT_U3D_FUNCTIONS = 13;
 extern std::string getConfigPath();
 bool is_fail_to_prepare;
 
+void testHold(int _hold){
+	switch (_hold){
+	case 0:
+	case 1:{
+		break;
+	}
+	default: {
+		throw std::exception();
+	}
+	}
+}
+
 void u3dFunctionModule::connect_handler(const boost::system::error_code& ec)
 {
 	if (ec) {
@@ -251,6 +263,7 @@ FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, 
 			variable_value *input6 = (variable_value *)args[5];
 			variable_value *input7 = (variable_value *)args[6];
 			variable_value *input8 = (variable_value *)args[7];
+			testHold(*input8);
 			std::string input9((const char *)args[8]);
 			rez = createCube((int)*input1, (int)*input2, (int)*input3, (int)*input4, (int)*input5, (int)*input6, (int)*input7, (int)*input8, input9);
 			break;
@@ -262,6 +275,7 @@ FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, 
 			variable_value *input3 = (variable_value *)args[2];
 			variable_value *input4 = (variable_value *)args[3];
 			variable_value *input5 = (variable_value *)args[4];
+			testHold(*input5);
 			std::string input6((const char *)args[5]);
 			rez = createSphere((int)*input1, (int)*input2, (int)*input3, (int)*input4, (int)*input5, input6);
 			break;
@@ -276,6 +290,7 @@ FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, 
 			variable_value *input6 = (variable_value *)args[5];
 			variable_value *input7 = (variable_value *)args[6];
 			variable_value *input8 = (variable_value *)args[7];
+			testHold(*input8);
 			std::string input9((const char *)args[8]);
 			std::string input10((const char *)args[9]);
 			rez = createModel((int)*input1, (int)*input2, (int)*input3, (int)*input4, (int)*input5, (int)*input6, (int)*input7, (int)*input8, input9, input10);
@@ -304,6 +319,7 @@ FunctionResult* u3dFunctionModule::executeFunction(system_value function_index, 
 			if (!is_world_initialized) { throw std::exception(); }
 			variable_value *input1 = (variable_value *)args[0];
 			variable_value *input2 = (variable_value *)args[1];
+			testHold(*input2);
 			changeStatus((int)*input1, (int)*input2);
 			break;
 		}
