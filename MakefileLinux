@@ -37,7 +37,7 @@ u3d_function_module.o:  u3d_function_module.cpp
 	@echo "-------------------------" 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} -f "${OBJECTDIR}/$@.d"
-	$(COMPILE.cc) $(FLAGS) -D_WIN32_WINNT=0x0501 -DWINVER=0x0501 -o  ${OBJECTDIR}/u3d_function_module.o u3d_function_module.cpp
+	$(COMPILE.cc) $(FLAGS) -o  ${OBJECTDIR}/u3d_function_module.o u3d_function_module.cpp
 
 module: messages_functions.o u3d_function_module.o
 	@echo "-------------------------" 

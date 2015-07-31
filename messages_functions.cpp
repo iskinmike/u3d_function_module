@@ -27,7 +27,8 @@ std::vector<int> *ids_of_created_objects;
 std::string returnStr(int _i){
 	char buf[4 * sizeof(int)];
 	const int len = sprintf(buf, "%d", _i);
-	return std::string(buf, buf + len);
+	std::string temp_str(buf, len);
+	return temp_str;
 };
 
 double extractString(std::string str, char first, char second){

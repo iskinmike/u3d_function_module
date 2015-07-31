@@ -19,6 +19,7 @@ class u3dFunctionModule : public FunctionModule {
 	colorPrintfModuleVA_t *colorPrintf_p;
 
 	bool is_world_initialized;
+	int postmans_uniq_id;
 
 	std::vector<int> ids_of_created_objects;
 

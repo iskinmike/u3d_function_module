@@ -44,6 +44,7 @@ void u3dFunctionModule::connect_handler(const boost::system::error_code& ec)
 	}
 	else {
 		colorPrintf(ConsoleColor(ConsoleColor::green), "connect to socket\n");
+
 	}
 }
 
@@ -63,19 +64,24 @@ void u3dFunctionModule::read_handler(SocketAndBuffer *sock_and_buff_struct, cons
 		char perc = '%';
 		char amper = '&';
 		std::string temp_message(sock_and_buff_struct->buffer_, bytes_transferred);
-
 		while (temp_message.find(amper) != std::string::npos) {
 			unsigned int PosAmper = temp_message.find(amper);
 			unsigned int PosPerc = temp_message.find(perc);
 
 			std::string strToProcess = temp_message.substr(PosPerc, PosAmper - PosPerc + 1);
+///////////////////
+
 			temp_message.assign(temp_message.substr(PosAmper + 1));
 
 			int uniq_id = extractUniq_Id(strToProcess);
-			postmans_map_of_mailed_messages[uniq_id]->string_var = strToProcess;
-			postmans_map_of_mailed_messages[uniq_id]->bool_var = true;
-			postmans_map_of_mailed_messages[uniq_id]->cond_var->notify_one();
-			postmans_map_of_mailed_messages.erase(uniq_id);
+			//if (!postmans_map_of_mailed_messages.count(uniq_id)){
+			module_mutex.lock();
+				postmans_map_of_mailed_messages[uniq_id]->string_var = strToProcess;
+				postmans_map_of_mailed_messages[uniq_id]->bool_var = true;
+				postmans_map_of_mailed_messages[uniq_id]->cond_var->notify_one();
+				postmans_map_of_mailed_messages.erase(uniq_id);
+			module_mutex.unlock();
+			//}
 		};
 	}
 	(*sock_and_buff_struct->socket_).async_receive(
@@ -87,6 +93,9 @@ void u3dFunctionModule::read_handler(SocketAndBuffer *sock_and_buff_struct, cons
 u3dFunctionModule::u3dFunctionModule() : module_socket(robot_io_service_){
 	postman_thread_waker_flag=false;
 	is_world_initialized = false;
+	// for linux compiler othrwise id don't changes
+	postmans_uniq_id = 0;
+	postmans_uniq_id++; 
 
 	u3d_functions = new FunctionData*[COUNT_U3D_FUNCTIONS];
 	system_value function_id = 0;
@@ -355,8 +364,6 @@ int u3dFunctionModule::endProgram(int uniq_index) {
 void u3dFunctionModule::destroy() {
 	robot_io_service_.stop();
 
-	printf("destroy started \n");
-
 	for (unsigned int j = 0; j < COUNT_U3D_FUNCTIONS; ++j) {
 		if (u3d_functions[j]->count_params) {
 			delete[] u3d_functions[j]->params;
@@ -379,17 +386,10 @@ void u3dFunctionModule::destroy() {
 	module_reciever_thread->join();
 
 	for (auto i = postmans_map_of_mailed_messages.begin(); i != postmans_map_of_mailed_messages.end(); i++){
-		printf("we missed someone \n");
 		i->second->bool_var = true;
 		i->second->string_var = "fail";
 		i->second->cond_var->notify_one();
 	}
-
-	postman_exit_mutex.unlock();
-	module_mutex.unlock();
-	postman_thread_mutex.unlock();
-
-	colorPrintf(ConsoleColor(ConsoleColor::green), "Threads done work");
 
 	delete module_postman_thread;
 	delete module_reciever_thread;
@@ -398,9 +398,7 @@ void u3dFunctionModule::destroy() {
 	delete sock_and_buff_struct;
 	boost::interprocess::shared_memory_object::remove("PostmansSharedMemory");
 
-	printf("destroy almost ended \n");
 	delete this;
-	printf("destroy ended \n");
 };
 
 void u3dFunctionModule::prepare(colorPrintfModule_t *colorPrintf_p, colorPrintfModuleVA_t *colorPrintfVA_p){
@@ -489,12 +487,13 @@ void u3dFunctionModule::modulePostmanThread(){
 
 	std::string mailed_message("");
 
-	int postmans_uniq_id = 0;
-
 	while (true){
 		// check to exit
 		postman_exit_mutex.lock();
-		if (postman_thread_exit){ break; }
+		if (postman_thread_exit){ 
+			postman_exit_mutex.unlock();
+			break; 
+		}
 		postman_exit_mutex.unlock();
 		// wait for new message in box
 		boost::unique_lock<boost::mutex> lock(postman_thread_mutex);
@@ -512,18 +511,18 @@ void u3dFunctionModule::modulePostmanThread(){
 			postmans_uniq_id++;
 		}
 		(*box_of_messages).clear();
-		module_mutex.unlock();
+
 		for (auto i = postmans_map_of_mailed_messages.begin(); i != postmans_map_of_mailed_messages.end(); i++){
 			if (i->second->string_var != ""){
 				mailed_message = "%%" + returnStr(i->first) + i->second->string_var + "&";  // construct message
-				// send to socket
+				i->second->string_var.assign("");
 				module_socket.async_send(
 					boost::asio::buffer(mailed_message.c_str(), mailed_message.length()),
 					boost::bind(&u3dFunctionModule::write_handler, this, _1, _2)
 				);
-				i->second->string_var.assign("");
 			}
 		}
+		module_mutex.unlock();
 	}
 };
 
