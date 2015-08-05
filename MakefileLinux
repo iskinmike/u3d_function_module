@@ -25,21 +25,21 @@ release: clean module
 
 clean:
 	@echo "-------------------------" 
-	${RM} -rf ${OBJECTDIR}
+	rm -rf ${OBJECTDIR}
 
 messages_functions.o:  messages_functions.cpp
 	@echo "-------------------------" 
-	${MKDIR} -p ${OBJECTDIR}
-	${RM} -f "${OBJECTDIR}/$@.d"
+	mkdir -p ${OBJECTDIR}
+	rm -f "${OBJECTDIR}/$@.d"
 	$(COMPILE.cc) $(FLAGS) -o ${OBJECTDIR}/messages_functions.o messages_functions.cpp
 
 u3d_function_module.o:  u3d_function_module.cpp
 	@echo "-------------------------" 
-	${MKDIR} -p ${OBJECTDIR}
-	${RM} -f "${OBJECTDIR}/$@.d"
+	mkdir -p ${OBJECTDIR}
+	rm -f "${OBJECTDIR}/$@.d"
 	$(COMPILE.cc) $(FLAGS) -o  ${OBJECTDIR}/u3d_function_module.o u3d_function_module.cpp
 
 module: messages_functions.o u3d_function_module.o
 	@echo "-------------------------" 
-	${MKDIR} -p ${OBJECTDIR}
+	mkdir -p ${OBJECTDIR}
 	${LINK.cc} -m32 -shared ${OBJECTDIR}/u3d_function_module.o ${OBJECTDIR}/messages_functions.o -o ${OBJECTDIR}/u3d_module_$(FILENAME_FIX).so -lboost_system -lboost_thread
