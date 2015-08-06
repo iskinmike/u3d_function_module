@@ -1,35 +1,35 @@
 #ifndef MESSAGES_FUNCTIONS_H
 #define MESSAGES_FUNCTIONS_H
 
-struct CondBoolString;
+struct BoxOfMessagesData;
 struct MutexAndBoxVector;
 
-struct CondBoolString {
-  boost::condition_variable *cond_var;
-  bool bool_var;
-  std::string string_var;
+struct BoxOfMessagesData {
+	boost::condition_variable *cond_messenger_waker;
+	bool bool_messenger_wake_flag;
+	std::string _message;
 
-  CondBoolString(boost::condition_variable *cond_, bool bool_var,
-                 std::string string_var)
-      : bool_var(bool_var), string_var(string_var) {
-    this->cond_var = cond_;
-  };
+	BoxOfMessagesData(boost::condition_variable *cond_, bool bool_messenger_wake_flag,
+		std::string _message)
+		: bool_messenger_wake_flag(bool_messenger_wake_flag), _message(_message) {
+		this->cond_messenger_waker = cond_;
+	};
 };
 struct MutexAndBoxVector {
-  boost::mutex *mtx;
-  std::vector<CondBoolString *> *box;
-  boost::condition_variable *cond_postman_thread_waker;
-  bool *bool_postman_thread_waker_flag;
-  bool *is_world_initialized_flag;
-  std::vector<int> *ids_of_objects;
+	boost::mutex *mtx;
+	std::vector<BoxOfMessagesData *> *box;
+	boost::condition_variable *cond_postman_thread_waker;
+	bool *bool_postman_thread_waker_flag;
+	bool *is_world_initialized_flag;
+	std::vector<int> *ids_of_objects;
 };
 
 /// Helper Functions
 std::string returnStr(int _i);
 int extractUniq_Id(std::string str);
-bool *returnIsWorldInitializedFlag();
+//bool *returnIsWorldInitializedFlag();
 void readSharedMemory();
-bool returnIsReadSharedMemory();
+//bool returnIsReadSharedMemory();
 ///
 
 void createWorld(int x, int y, int z);

@@ -14,14 +14,55 @@
 
 #include "messages_functions.h"
 
+/// MACROS
+#define GET_COORDS(extract_function) \
+  bool is_exist = false; \
+  (*box_mutex).lock(); \
+  for (auto i = ids_of_created_objects->begin(); \
+       i != ids_of_created_objects->end(); i++) { \
+    if ((*i) == object_id) { \
+	  (*box_mutex).unlock(); \
+      is_exist = true; \
+      std::string params("+obj:coords,"); \
+      params.append(returnStr(object_id)); \
+      std::string temp_string; \
+      temp_string = createMessage(params); \
+      double d = extract_function(temp_string); \
+      return d; \
+	    } \
+    } \
+  if (!is_exist) { \
+  (*box_mutex).unlock(); \
+    throw std::exception(); \
+  } 
+
+#define DELETE_OBJECT_MACRO \
+	bool is_exist = false; \
+	(*box_mutex).lock(); \
+	for (auto i = ids_of_created_objects->begin(); \
+		i != ids_of_created_objects->end(); i++) { \
+		if ((*i) == object_id) { \
+			(*box_mutex).unlock(); \
+			is_exist = true; \
+			std::string params("+delete:"); \
+			params.append(returnStr(object_id)); \
+			createMessage(params); \
+			(*box_mutex).lock(); \
+			ids_of_created_objects->erase(i); \
+			(*box_mutex).unlock(); \
+			break; \
+				} \
+		} \
+
+//// Variables
 bool is_read_from_shared_memory = false;
 
 // Box OfMessages
-std::vector<CondBoolString *> *box_of_messages;
+std::vector<BoxOfMessagesData *> *box_of_messages;
 boost::mutex *box_mutex;
 boost::condition_variable *postman_thread_waker;
 bool *postman_thread_waker_flag;
-static bool *is_world_initialized;
+bool *is_world_initialized;
 std::vector<int> *ids_of_created_objects;
 
 std::string returnStr(int _i) {
@@ -116,9 +157,9 @@ void readSharedMemory() {
   is_read_from_shared_memory = true;
 }
 
-bool *returnIsWorldInitializedFlag() { return is_world_initialized; };
+//bool *returnIsWorldInitializedFlag() { return is_world_initialized; };
 
-bool returnIsReadSharedMemory() { return is_read_from_shared_memory; }
+//bool returnIsReadSharedMemory() { return is_read_from_shared_memory; }
 
 std::string createMessage(std::string params) {
   if (!is_read_from_shared_memory) {
@@ -127,8 +168,8 @@ std::string createMessage(std::string params) {
 
   boost::mutex message_mutex;
   boost::condition_variable wait_recieved_message;
-  CondBoolString *message_struct =
-      new CondBoolString(&wait_recieved_message, false, params);
+  BoxOfMessagesData *message_struct =
+      new BoxOfMessagesData(&wait_recieved_message, false, params);
   // wake up postman thread
   (*box_mutex).lock();
   box_of_messages->push_back(message_struct);
@@ -138,20 +179,16 @@ std::string createMessage(std::string params) {
 
   // wait to recieve socket answer
   boost::unique_lock<boost::mutex> lock(message_mutex);
-  while (!message_struct->bool_var) {
-    (*(message_struct->cond_var)).wait(lock);
+  while (!message_struct->bool_messenger_wake_flag) {
+    (*(message_struct->cond_messenger_waker)).wait(lock);
   }
 
-  std::string result_message_str(message_struct->string_var);
+  std::string result_message_str(message_struct->_message);
   delete message_struct;
 
   testStringSuccess(result_message_str);
   return result_message_str;
 };
-
-void recieveBoxOfMessageAddress(std::vector<CondBoolString *> *address) {
-  box_of_messages = address;
-}
 
 // createWorld
 void createWorld(int x, int y, int z) {
@@ -166,289 +203,224 @@ void createWorld(int x, int y, int z) {
 
 // destroyWorld
 void destroyWorld() {
-  std::string params("+destroy");
-  createMessage(params);
-  ids_of_created_objects->clear();
+	std::string params("+destroy");
+	createMessage(params);
+	(*box_mutex).lock();
+	ids_of_created_objects->clear();
+	(*box_mutex).unlock();
 }
 
 // deleteObject
 void deleteObject(int object_id) {
-  bool is_exist = false;
-  for (auto i = ids_of_created_objects->begin();
-       i != ids_of_created_objects->end(); i++) {
-    if ((*i) == object_id) {
-      is_exist = true;
-      std::string params("+delete:");
-      params.append(returnStr(object_id));
-      createMessage(params);
-      ids_of_created_objects->erase(i);
-      break;
-    }
-  }
-  // Throw exception if can't find element among existing
-  if (!is_exist) {
-    throw std::exception();
-  }
+	DELETE_OBJECT_MACRO
+	// Throw exception if can't find element among existing
+	if (!is_exist) {
+		(*box_mutex).unlock();
+		throw std::exception();
+	}
 }
 
 // deleteRobot
 void deleteRobot(int object_id) {
-  for (auto i = ids_of_created_objects->begin();
-       i != ids_of_created_objects->end(); i++) {
-    if ((*i) == object_id) {
-      std::string params("+delete:");
-      params.append(returnStr(object_id));
-      createMessage(params);
-      ids_of_created_objects->erase(i);
-      break;
-    }
-  }
+	DELETE_OBJECT_MACRO
+	if (!is_exist) {
+		(*box_mutex).unlock();
+	}
 }
 
 // createCube
 int createCube(int x, int y, int z, int dx, int dy, int dz, int angle, int hold,
-               std::string color) {
-  std::string params("+obj:cube,");
-  params.append(returnStr(x));
-  params.append(",");
-  params.append(returnStr(y));
-  params.append(",");
-  params.append(returnStr(z));
-  params.append(",");
-  params.append(returnStr(dx));
-  params.append(",");
-  params.append(returnStr(dy));
-  params.append(",");
-  params.append(returnStr(dz));
-  params.append(",");
-  params.append(returnStr(angle));
-  params.append(",");
-  params.append(returnStr(hold));
-  params.append(",");
-  params.append(color);
+	std::string color) {
+	std::string params("+obj:cube,");
+	params.append(returnStr(x));
+	params.append(",");
+	params.append(returnStr(y));
+	params.append(",");
+	params.append(returnStr(z));
+	params.append(",");
+	params.append(returnStr(dx));
+	params.append(",");
+	params.append(returnStr(dy));
+	params.append(",");
+	params.append(returnStr(dz));
+	params.append(",");
+	params.append(returnStr(angle));
+	params.append(",");
+	params.append(returnStr(hold));
+	params.append(",");
+	params.append(color);
 
-  std::string temp_string;
-  temp_string = createMessage(params);
-  int d = extractObj_id(temp_string);
-  //// insert id of created object
-  ids_of_created_objects->push_back(d);
-  return d;
+	std::string temp_string;
+	temp_string = createMessage(params);
+	int d = extractObj_id(temp_string);
+	//// insert id of created object
+	(*box_mutex).lock();
+	ids_of_created_objects->push_back(d);
+	(*box_mutex).unlock();
+	return d;
 }
 
 // createSphere
 int createSphere(int x, int y, int z, int R, int hold, std::string color) {
-  std::string params("+obj:sphere,");
-  params.append(returnStr(x));
-  params.append(",");
-  params.append(returnStr(y));
-  params.append(",");
-  params.append(returnStr(z));
-  params.append(",");
-  params.append(returnStr(R));
-  params.append(",");
-  params.append(returnStr(hold));
-  params.append(",");
-  params.append(color);
+	std::string params("+obj:sphere,");
+	params.append(returnStr(x));
+	params.append(",");
+	params.append(returnStr(y));
+	params.append(",");
+	params.append(returnStr(z));
+	params.append(",");
+	params.append(returnStr(R));
+	params.append(",");
+	params.append(returnStr(hold));
+	params.append(",");
+	params.append(color);
 
-  std::string temp_string;
-  temp_string = createMessage(params);
-  int d = extractObj_id(temp_string);
-  //// insert id of created object
-  ids_of_created_objects->push_back(d);
-  return d;
+	std::string temp_string;
+	temp_string = createMessage(params);
+	int d = extractObj_id(temp_string);
+	//// insert id of created object
+	(*box_mutex).lock();
+	ids_of_created_objects->push_back(d);
+	(*box_mutex).unlock();
+	return d;
 }
 
 // createModel
 int createModel(int x, int y, int z, int scale_x, int scale_y, int scale_z,
-                int angle, int hold, std::string color, std::string path) {
-  std::string params("+obj:model,");
-  params.append(returnStr(x));
-  params.append(",");
-  params.append(returnStr(y));
-  params.append(",");
-  params.append(returnStr(z));
-  params.append(",");
-  params.append(returnStr(scale_x));
-  params.append(",");
-  params.append(returnStr(scale_y));
-  params.append(",");
-  params.append(returnStr(scale_z));
-  params.append(",");
-  params.append(returnStr(angle));
-  params.append(",");
-  params.append(returnStr(hold));
-  params.append(",");
-  params.append(color);
-  params.append(",");
-  params.append(path);
+	int angle, int hold, std::string color, std::string path) {
+	std::string params("+obj:model,");
+	params.append(returnStr(x));
+	params.append(",");
+	params.append(returnStr(y));
+	params.append(",");
+	params.append(returnStr(z));
+	params.append(",");
+	params.append(returnStr(scale_x));
+	params.append(",");
+	params.append(returnStr(scale_y));
+	params.append(",");
+	params.append(returnStr(scale_z));
+	params.append(",");
+	params.append(returnStr(angle));
+	params.append(",");
+	params.append(returnStr(hold));
+	params.append(",");
+	params.append(color);
+	params.append(",");
+	params.append(path);
 
-  std::string temp_string;
-  temp_string = createMessage(params);
-  int d = extractObj_id(temp_string);
-  //// insert id of created object
-  ids_of_created_objects->push_back(d);
-  return d;
+	std::string temp_string;
+	temp_string = createMessage(params);
+	int d = extractObj_id(temp_string);
+	//// insert id of created object
+	(*box_mutex).lock();
+	ids_of_created_objects->push_back(d);
+	(*box_mutex).unlock();
+	return d;
 }
 
 // changeColor
 void changeColor(int object_id, std::string color) {
-  bool is_exist = false;
-  for (auto i = ids_of_created_objects->begin();
-       i != ids_of_created_objects->end(); i++) {
-    if ((*i) == object_id) {
-      is_exist = true;
-      std::string params("+obj:color,");
-      params.append(returnStr(object_id));
-      params.append(",");
-      params.append(color);
+	bool is_exist = false;
+	(*box_mutex).lock();
+	for (auto i = ids_of_created_objects->begin();
+		i != ids_of_created_objects->end(); i++) {
+		if ((*i) == object_id) {
+			(*box_mutex).unlock();
+			is_exist = true;
+			std::string params("+obj:color,");
+			params.append(returnStr(object_id));
+			params.append(",");
+			params.append(color);
 
-      createMessage(params);
-      break;
-    }
-  }
-  // Throw exception if can't find element among existing
-  if (!is_exist) {
-    throw std::exception();
-  }
+			createMessage(params);
+			break;
+		}
+	}
+	// Throw exception if can't find element among existing
+	if (!is_exist) {
+		(*box_mutex).unlock();
+		throw std::exception();
+	}
 }
 
 // moveObject
 void moveObject(int object_id, int x, int y, int z, int angle, int speed_coord,
-                int speed_angle) {
-  bool is_exist = false;
-  for (auto i = ids_of_created_objects->begin();
-       i != ids_of_created_objects->end(); i++) {
-    if ((*i) == object_id) {
-      is_exist = true;
-      std::string params("+obj:move,");
-      params.append(returnStr(object_id));
-      params.append(",");
-      params.append(returnStr(x));
-      params.append(",");
-      params.append(returnStr(y));
-      params.append(",");
-      params.append(returnStr(z));
-      params.append(",");
-      params.append(returnStr(angle));
-      params.append(",");
-      params.append(returnStr(speed_coord));
-      params.append(",");
-      params.append(returnStr(speed_angle));
+	int speed_angle) {
+	bool is_exist = false;
+	(*box_mutex).lock();
+	for (auto i = ids_of_created_objects->begin();
+		i != ids_of_created_objects->end(); i++) {
+		if ((*i) == object_id) {
+			(*box_mutex).unlock();
+			is_exist = true;
+			std::string params("+obj:move,");
+			params.append(returnStr(object_id));
+			params.append(",");
+			params.append(returnStr(x));
+			params.append(",");
+			params.append(returnStr(y));
+			params.append(",");
+			params.append(returnStr(z));
+			params.append(",");
+			params.append(returnStr(angle));
+			params.append(",");
+			params.append(returnStr(speed_coord));
+			params.append(",");
+			params.append(returnStr(speed_angle));
 
-      createMessage(params);
-    }
-  }
-  // Throw exception if can't find element among existing
-  if (!is_exist) {
-    throw std::exception();
-  }
+			createMessage(params);
+			break;
+		}
+	}
+	// Throw exception if can't find element among existing
+	if (!is_exist) {
+		(*box_mutex).unlock();
+		throw std::exception();
+	}
 }
 
 // changeStatus
 void changeStatus(int object_id, int hold) {
-  bool is_exist = false;
-  for (auto i = ids_of_created_objects->begin();
-       i != ids_of_created_objects->end(); i++) {
-    if ((*i) == object_id) {
-      is_exist = true;
-      std::string params("+obj:hold,");
-      params.append(returnStr(object_id));
-      params.append(",");
-      params.append(returnStr(hold));
+	bool is_exist = false;
+	(*box_mutex).lock();
+	for (auto i = ids_of_created_objects->begin();
+		i != ids_of_created_objects->end(); i++) {
+		if ((*i) == object_id) {
+			(*box_mutex).unlock();
+			is_exist = true;
+			std::string params("+obj:hold,");
+			params.append(returnStr(object_id));
+			params.append(",");
+			params.append(returnStr(hold));
 
-      createMessage(params);
-    }
-  }
-  // Throw exception if can't find element among existing
-  if (!is_exist) {
-    throw std::exception();
-  }
+			createMessage(params);
+			break;
+		}
+	}
+	// Throw exception if can't find element among existing
+	if (!is_exist) {
+		(*box_mutex).unlock();
+		throw std::exception();
+	}
 }
 
 // getX
 double getX(int object_id) {
-  bool is_exist = false;
-  for (auto i = ids_of_created_objects->begin();
-       i != ids_of_created_objects->end(); i++) {
-    if ((*i) == object_id) {
-      is_exist = true;
-      std::string params("+obj:coords,");
-      params.append(returnStr(object_id));
-
-      std::string temp_string;
-      temp_string = createMessage(params);
-      double d = extractX(temp_string);
-      return d;
-    }
-  }
-  // Throw exception if can't find element among existing
-  if (!is_exist) {
-    throw std::exception();
-  }
+	GET_COORDS(extractX);
 }
 
 // getY
 double getY(int object_id) {
-  bool is_exist = false;
-  for (auto i = ids_of_created_objects->begin();
-       i != ids_of_created_objects->end(); i++) {
-    if ((*i) == object_id) {
-      is_exist = true;
-      std::string params("+obj:coords,");
-      params.append(returnStr(object_id));
-
-      std::string temp_string;
-      temp_string = createMessage(params);
-      double d = extractY(temp_string);
-      return d;
-    }
-  }
-  // Throw exception if can't find element among existing
-  if (!is_exist) {
-    throw std::exception();
-  }
+	GET_COORDS(extractY);
 }
 
 // getZ
 double getZ(int object_id) {
-  bool is_exist = false;
-  for (auto i = ids_of_created_objects->begin();
-       i != ids_of_created_objects->end(); i++) {
-    if ((*i) == object_id) {
-      is_exist = true;
-      std::string params("+obj:coords,");
-      params.append(returnStr(object_id));
-
-      std::string temp_string;
-      temp_string = createMessage(params);
-      double d = extractZ(temp_string);
-      return d;
-    }
-  }
-  // Throw exception if can't find element among existing
-  if (!is_exist) {
-    throw std::exception();
-  }
+	GET_COORDS(extractZ);
 }
 
 // getAngle
 double getAngle(int object_id) {
-  bool is_exist = false;
-  for (auto i = ids_of_created_objects->begin();
-       i != ids_of_created_objects->end(); i++) {
-    if ((*i) == object_id) {
-      is_exist = true;
-      std::string params("+obj:coords,");
-      params.append(returnStr(object_id));
-
-      std::string temp_string;
-      temp_string = createMessage(params);
-      double d = extractAngle(temp_string);
-      return d;
-    }
-  }
-  // Throw exception if can't find element among existing
-  if (!is_exist) {
-    throw std::exception();
-  }
+	GET_COORDS(extractAngle);
 }

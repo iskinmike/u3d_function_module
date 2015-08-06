@@ -7,12 +7,14 @@
 #ifndef U3D_FUNCTION_MODULE_H
 #define U3D_FUNCTION_MODULE_H
 
-struct CondBoolString;
+struct BoxOfMessagesData;
 struct MutexAndBoxVector;
+/*
 struct SocketAndBuffer {
   boost::asio::ip::tcp::socket *socket_;
   char *buffer_;
 };
+*/
 
 class u3dFunctionModule : public FunctionModule {
   FunctionData **u3d_functions;
@@ -22,10 +24,12 @@ class u3dFunctionModule : public FunctionModule {
   int postmans_uniq_id;
 
   std::vector<int> ids_of_created_objects;
+  char *recv_message;
+  std::string *part_message_buffer;
 
   void modulePostmanThread();
   void moduleRecieverThread();
-  void read_handler(SocketAndBuffer *sock_and_buff_struct,
+  void read_handler(boost::asio::ip::tcp::socket *handler_socket,
                     const boost::system::error_code &ec,
                     std::size_t bytes_transferred);
   void write_handler(const boost::system::error_code &ec,
@@ -48,9 +52,9 @@ class u3dFunctionModule : public FunctionModule {
   boost::mutex module_mutex;
 
   MutexAndBoxVector *data_for_shared_memory;
-  SocketAndBuffer *sock_and_buff_struct;
-  std::vector<CondBoolString *> *box_of_messages;
-  std::map<int, CondBoolString *> postmans_map_of_mailed_messages;
+  //SocketAndBuffer *sock_and_buff_struct;
+  std::vector<BoxOfMessagesData *> *box_of_messages;
+  std::map<int, BoxOfMessagesData *> postmans_map_of_mailed_messages;
 
  public:
   u3dFunctionModule();
