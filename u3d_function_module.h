@@ -9,12 +9,6 @@
 
 struct BoxOfMessagesData;
 struct MutexAndBoxVector;
-/*
-struct SocketAndBuffer {
-  boost::asio::ip::tcp::socket *socket_;
-  char *buffer_;
-};
-*/
 
 class u3dFunctionModule : public FunctionModule {
   FunctionData **u3d_functions;
@@ -52,7 +46,6 @@ class u3dFunctionModule : public FunctionModule {
   boost::mutex module_mutex;
 
   MutexAndBoxVector *data_for_shared_memory;
-  //SocketAndBuffer *sock_and_buff_struct;
   std::vector<BoxOfMessagesData *> *box_of_messages;
   std::map<int, BoxOfMessagesData *> postmans_map_of_mailed_messages;
 
