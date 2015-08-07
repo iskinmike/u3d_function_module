@@ -55,4 +55,4 @@ u3d_function_module.o:  u3d_function_module.cpp
 module: messages_functions.o u3d_function_module.o config.o
 	@echo "-------------------------" 
 	${MKDIR} -p ${OBJECTDIR}
-	${LINK.cc} -m32 -shared ${OBJECTDIR}/u3d_function_module.o ${OBJECTDIR}/messages_functions.o ${OBJECTDIR}/config.o -o ${OBJECTDIR}/u3d_module_$(FILENAME_FIX).dll -L${BOOST_LIBS_DIR} ${BOOST_LIBS} -lws2_32 > log_make.log
+	${LINK.cc} -m32 -shared ${OBJECTDIR}/u3d_function_module.o ${OBJECTDIR}/messages_functions.o ${OBJECTDIR}/config.o -o ${OBJECTDIR}/u3d_module_$(FILENAME_FIX).dll -L${BOOST_DIR_LIBS} ${BOOST_LIBS} -lws2_32
