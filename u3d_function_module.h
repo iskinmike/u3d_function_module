@@ -5,35 +5,75 @@
 */
 
 #ifndef U3D_FUNCTION_MODULE_H
-#define	U3D_FUNCTION_MODULE_H
+#define U3D_FUNCTION_MODULE_H
+
+struct BoxOfMessagesData;
+struct MutexAndBoxVector;
 
 class u3dFunctionModule : public FunctionModule {
-	FunctionData **u3d_functions;
+  FunctionData **u3d_functions;
+  colorPrintfModuleVA_t *colorPrintf_p;
 
-public:
+  bool is_world_initialized;
+  int postmans_uniq_id;
 
-	colorPrintf_t *colorPrintf;
-	u3dFunctionModule();
+  std::vector<int> ids_of_created_objects;
+  char *recv_message;
+  std::string *part_message_buffer;
 
-	//init
-	const char *getUID();
-	void prepare(colorPrintf_t *colorPrintf_p, colorPrintfVA_t *colorPrintfVA_p);
+  void modulePostmanThread();
+  void moduleRecieverThread();
+  void read_handler(boost::asio::ip::tcp::socket *handler_socket,
+                    const boost::system::error_code &ec,
+                    std::size_t bytes_transferred);
+  void write_handler(const boost::system::error_code &ec,
+                     std::size_t bytes_transferred);
+  void connect_handler(const boost::system::error_code &ec);
 
-	//compiler only
-	FunctionData **getFunctions(unsigned int *count_functions);
-	void *writePC(unsigned int *buffer_length);
+  boost::mutex postman_exit_mutex;
+  bool postman_thread_exit;
 
-	//intepreter - program & lib
-	void readPC(void *buffer, unsigned int buffer_length);
+  boost::asio::io_service robot_io_service_;
+  boost::asio::ip::tcp::socket module_socket;
 
-	//intepreter - program
-	FunctionResult* executeFunction(system_value function_index, void **args);
-	int startProgram(int uniq_index);
-	int endProgram(int uniq_index);
+  // Postman thread variables
+  boost::thread *module_postman_thread;
+  boost::mutex postman_thread_mutex;
+  bool postman_thread_waker_flag;
+  boost::condition_variable postman_thread_waker;
 
-	//destructor
-	void destroy();
-	~u3dFunctionModule() {};
+  boost::thread *module_reciever_thread;
+  boost::mutex module_mutex;
+
+  MutexAndBoxVector *data_for_shared_memory;
+  std::vector<BoxOfMessagesData *> *box_of_messages;
+  std::map<int, BoxOfMessagesData *> postmans_map_of_mailed_messages;
+
+ public:
+  u3dFunctionModule();
+
+  // init
+  const char *getUID();
+  void prepare(colorPrintfModule_t *colorPrintf_p,
+               colorPrintfModuleVA_t *colorPrintfVA_p);
+
+  // compiler only
+  FunctionData **getFunctions(unsigned int *count_functions);
+  void *writePC(unsigned int *buffer_length);
+
+  // intepreter - program & lib
+  void readPC(void *buffer, unsigned int buffer_length);
+
+  // intepreter - program
+  FunctionResult *executeFunction(system_value function_index, void **args);
+  int startProgram(int uniq_index);
+  int endProgram(int uniq_index);
+
+  // destructor
+  void destroy();
+  ~u3dFunctionModule(){};
+
+  void colorPrintf(ConsoleColor colors, const char *mask, ...);
 };
 
-#endif	/* U3D_FUNCTION_MODULE_H  */
+#endif /* U3D_FUNCTION_MODULE_H  */
